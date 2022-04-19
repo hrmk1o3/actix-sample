@@ -41,10 +41,10 @@ jobs:
       run: cd app
 
     - name: Install dependencies (MacOS)
-      if: runner.os == 'macos-latest'
+      if: runner.os == 'macOS'
       run: brew install postgres
     - name: Install dependencies (Ubuntu)
-      if: runner.os == 'ubuntu-latest'
+      if: runner.os == 'Linux'
       run: apt update; apt install postgresql postgresql-contrib; systemctl start postgresql.service
 
     - name: Create a test user and database
