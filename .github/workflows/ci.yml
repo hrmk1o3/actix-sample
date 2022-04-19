@@ -48,7 +48,7 @@ jobs:
       run: sudo apt update; sudo apt install postgresql postgresql-contrib; sudo systemctl start postgresql.service
 
     - name: Create a test user and database
-      run: createuser -P test_user; createdb -O test_user testing_db
+      run: createuser test_user; createdb -O test_user testing_db
     - name: Define testing table schema
       run: psql -f sql/schema.sql testing_db
 
