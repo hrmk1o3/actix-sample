@@ -1,4 +1,3 @@
-
 use actix_web::{HttpResponse, ResponseError};
 use deadpool_postgres::PoolError;
 use derive_more::{Display, From};

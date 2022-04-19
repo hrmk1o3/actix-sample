@@ -1,6 +1,9 @@
 use actix_web::{web, App, HttpServer};
+use app::{
+    config::Config,
+    handlers::{add_user, get_users},
+};
 use dotenv::dotenv;
-use app::{handlers::{add_user, get_users}, config::Config};
 use tokio_postgres::NoTls;
 
 #[actix_web::main]
