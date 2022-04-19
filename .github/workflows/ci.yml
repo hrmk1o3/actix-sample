@@ -1,17 +1,58 @@
-name: GitHub Actions Demo
 on: [push]
+
+name: ci
+
 jobs:
-  Explore-GitHub-Actions:
-    runs-on: ubuntu-latest
+  native:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    env:
+      EXE_EXT: ${{ contains(matrix.os, 'windows') && '.exe' || '' }}
+
     steps:
-      - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
-      - run: echo "🐧 This job is now running on a ${{ runner.os }} server hosted by GitHub!"
-      - run: echo "🔎 The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
-      - name: Check out repository code
-        uses: actions/checkout@v3
-      - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
-      - run: echo "🖥️ The workflow is now ready to test your code on the runner."
-      - name: List files in the repository
-        run: |
-          ls ${{ github.workspace }}
-      - run: echo "🍏 This job's status is ${{ job.status }}."
+    - uses: actions/checkout@v2
+    - name: Install LLVM (windows only)
+      if: runner.os == 'Windows'
+      run: choco install llvm
+
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: 'nightly'
+    # ref: https://github.com/actions/cache/blob/main/examples.md#rust---cargo
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+    - name: Check fmt
+      run: cargo fmt -- --check
+
+    - name: Move to working directory
+      run: cd app
+
+    - name: Install dependencies (MacOS)
+      if: runner.os == 'macos-latest'
+      run: brew install postgres
+    - name: Install dependencies (Ubuntu)
+      if: runner.os == 'ubuntu-latest'
+      run: apt update; apt install postgresql postgresql-contrib; systemctl start postgresql.service
+
+    - name: Create a test user and database
+      run: createuser -P test_user; createdb -O test_user testing_db
+    - name: Define testing table schema
+      run: psql -f sql/schema.sql testing_db
+
+    - name: Set .env file
+      run: cp template.env .env
+    - name: Run all tests
+      run: cargo test
