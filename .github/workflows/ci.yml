@@ -35,7 +35,7 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
     - name: Check fmt
-      run: cargo fmt -- --check
+      run: rustup component add rustfmt; cargo fmt -- --check
 
     - name: Move to working directory
       run: cd app
