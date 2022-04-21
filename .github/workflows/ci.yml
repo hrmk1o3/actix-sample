@@ -47,12 +47,10 @@ jobs:
       - name: Check fmt
         run: rustup component add rustfmt; cargo fmt -- --check
 
-      - name: ls
-        run: ls /
-      - name: ls root dir
-        run: ls /root/
+      - name: ls current directory
+        run: ls
       - name: Move to working directory
-        run: cd /root/app
+        run: cd app
 
       - name: Set .env file
         run: cp template.env .env
