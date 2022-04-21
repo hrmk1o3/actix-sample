@@ -3,12 +3,67 @@ on: [push]
 name: ci
 
 jobs:
-  # native:
+  native:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # os: [ubuntu-latest, macos-latest]
+        os: [macos-latest]
+
+    env:
+      EXE_EXT: ${{ contains(matrix.os, 'windows') && '.exe' || '' }}
+      PSQL_VERSION: "13.2"
+      PSQL_TEST_DB: "testing_db"
+      PSQL_TEST_USER: "test_user"
+      PSQL_TEST_PASSWORD: "test"
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: "nightly"
+      # ref: https://github.com/actions/cache/blob/main/examples.md#rust---cargo
+
+      - uses: harmon758/postgresql-action@v1
+        with:
+          postgresql version: ${{ env.PSQL_VERSION }}
+          postgresql db: ${{ env.PSQL_TEST_DB }}
+          postgresql user: ${{ env.PSQL_TEST_USER }}
+          postgresql password: ${{ env.PSQL_TEST_PASSWORD }}
+
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
+      - name: Check fmt
+        run: rustup component add rustfmt; cargo fmt -- --check
+
+      - name: Move to working directory
+        run: cd app
+
+      - name: Set .env file
+        run: cp template.env .env
+
+      - name: Define testing table schema
+        run: psql -f sql/schema.sql testing_db
+
+      - name: Run all tests
+        run: cargo test
+  # ssh-debug:
   #   runs-on: ${{ matrix.os }}
   #   strategy:
   #     matrix:
   #       # os: [ubuntu-latest, macos-latest]
-  #       os: [macos-latest]
+  #       os: [ubuntu-latest]
 
   #   env:
   #     EXE_EXT: ${{ contains(matrix.os, 'windows') && '.exe' || '' }}
@@ -29,99 +84,30 @@ jobs:
   #         --health-retries 5
 
   #   steps:
-  #   - uses: actions/checkout@v3
-  #   - name: Install LLVM (windows only)
-  #     if: runner.os == 'Windows'
-  #     run: choco install llvm
+  #     - uses: actions/checkout@v3
+  #     - name: Install LLVM (windows only)
+  #       if: runner.os == 'Windows'
+  #       run: choco install llvm
 
-  #   - uses: hecrj/setup-rust-action@v1
-  #     with:
-  #       rust-version: 'nightly'
-  #   # ref: https://github.com/actions/cache/blob/main/examples.md#rust---cargo
-  #   - uses: actions/cache@v2
-  #     with:
-  #       path: |
-  #         ~/.cargo/bin/
-  #         ~/.cargo/registry/index/
-  #         ~/.cargo/registry/cache/
-  #         ~/.cargo/git/db/
-  #         target/
-  #       key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+  #     - uses: hecrj/setup-rust-action@v1
+  #       with:
+  #         rust-version: "nightly"
+  #     # ref: https://github.com/actions/cache/blob/main/examples.md#rust---cargo
+  #     - uses: actions/cache@v2
+  #       with:
+  #         path: |
+  #           ~/.cargo/bin/
+  #           ~/.cargo/registry/index/
+  #           ~/.cargo/registry/cache/
+  #           ~/.cargo/git/db/
+  #           target/
+  #         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-  #   - name: Check targets are installed correctly
-  #     run: rustup target list --installed
-  #   - name: Check fmt
-  #     run: rustup component add rustfmt; cargo fmt -- --check
+  #     - name: Check targets are installed correctly
+  #       run: rustup target list --installed
+  #     - name: Check fmt
+  #       run: rustup component add rustfmt; cargo fmt -- --check
 
-  #   - name: Move to working directory
-  #     run: cd app
-
-  #   - name: Install dependencies (MacOS)
-  #     if: runner.os == 'macOS'
-  #     run: brew install postgres
-  #   - name: Install dependencies (Ubuntu)
-  #     if: matrix.os == 'ubuntu-latest'
-  #     run: sudo apt-get update; sudo apt-get install postgresql postgresql-contrib; sudo systemctl start postgresql.service; sudo pg_ctlcluster 12 main start
-
-  #   - name: Create a test user and database
-  #     run: createuser test_user; createdb -O test_user testing_db
-  #   - name: Define testing table schema
-  #     run: psql -f sql/schema.sql testing_db
-
-  #   - name: Set .env file
-  #     run: cp template.env .env
-  #   - name: Run all tests
-  #     run: cargo test
-  ssh-debug:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        # os: [ubuntu-latest, macos-latest]
-        os: [ubuntu-latest]
-
-    env:
-      EXE_EXT: ${{ contains(matrix.os, 'windows') && '.exe' || '' }}
-
-    services:
-      # Label used to access the service container
-      postgres:
-        # Docker Hub image
-        image: postgres
-        # Provide the password for postgres
-        env:
-          POSTGRES_PASSWORD: testing
-        # Set health checks to wait until postgres has started
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Install LLVM (windows only)
-      if: runner.os == 'Windows'
-      run: choco install llvm
-
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: 'nightly'
-    # ref: https://github.com/actions/cache/blob/main/examples.md#rust---cargo
-    - uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
-    - name: Check fmt
-      run: rustup component add rustfmt; cargo fmt -- --check
-
-    - name: Setup tmate session
-      # v1.0.2
-      uses: mxschmitt/action-tmate@b85ae7b45d889eec8b1772f81370970c15b78092
+  #     - name: Setup tmate session
+  #       # v1.0.2
+  #       uses: mxschmitt/action-tmate@b85ae7b45d889eec8b1772f81370970c15b78092
