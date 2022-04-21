@@ -57,20 +57,20 @@ jobs:
       - name: Set .env file
         run: cp template.env .env
 
-      - name: Define testing table schema
-        run: psql -f sql/schema.sql testing_db
+      # - name: Define testing table schema
+      #   run: psql -f sql/schema.sql testing_db
 
       - name: Run all tests
         run: cargo test
-  ssh-debug:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        # os: [ubuntu-latest, macos-latest]
-        os: [ubuntu-latest]
+  # ssh-debug:
+  #   runs-on: ${{ matrix.os }}
+  #   strategy:
+  #     matrix:
+  #       # os: [ubuntu-latest, macos-latest]
+  #       os: [ubuntu-latest]
 
-    steps:
-      - uses: actions/checkout@v2
+  #   steps:
+  #     - uses: actions/checkout@v2
 
       # - uses: hecrj/setup-rust-action@v1
       #   with:
@@ -99,6 +99,6 @@ jobs:
       # - name: Check fmt
       #   run: rustup component add rustfmt; cargo fmt -- --check
 
-      - name: Setup tmate session
-        # v1.0.2
-        uses: mxschmitt/action-tmate@b85ae7b45d889eec8b1772f81370970c15b78092
+      # - name: Setup tmate session
+      #   # v1.0.2
+      #   uses: mxschmitt/action-tmate@b85ae7b45d889eec8b1772f81370970c15b78092

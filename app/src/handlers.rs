@@ -18,7 +18,7 @@ pub async fn add_user(
 pub async fn get_users(db_pool: web::Data<Pool>) -> Result<HttpResponse, Error> {
     let client: Client = db_pool.get().await.map_err(MyError::PoolError)?;
 
-    let new_user = db::get_users(&client).await?;
+    let current_users = db::get_users(&client).await?;
 
-    Ok(HttpResponse::Ok().json(new_user))
+    Ok(HttpResponse::Ok().json(current_users))
 }

@@ -1,0 +1,33 @@
+version: '3.4'
+
+services:
+  db:
+    image: ubuntu/postgres:latest
+    environment:
+      - TZ=UTC
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=password
+      - APP_DB_USER=test_user
+      - APP_DB_PASS=testing
+      - APP_DB_NAME=testing_db
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d/
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "test_user" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+    ports:
+      - 5432:30432
+    tty: true
+  app:
+    image: actixsample
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 8080:8000
+    tty: true
+    links:
+      - "db:database"
