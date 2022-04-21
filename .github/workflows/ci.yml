@@ -2,6 +2,10 @@ on: [push]
 
 name: ci
 
+defaults:
+  run:
+    working-directory: app
+
 jobs:
   native:
     runs-on: ${{ matrix.os }}
@@ -47,8 +51,6 @@ jobs:
       - name: Check fmt
         run: rustup component add rustfmt; cargo fmt -- --check
 
-      - name: Move to working directory
-        run: cd app
       - name: ls current directory
         run: ls
 
@@ -60,56 +62,61 @@ jobs:
 
       - name: Run all tests
         run: cargo test
-  # ssh-debug:
-  #   runs-on: ${{ matrix.os }}
-  #   strategy:
-  #     matrix:
-  #       # os: [ubuntu-latest, macos-latest]
-  #       os: [ubuntu-latest]
+  ssh-debug:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        # os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
 
-  #   env:
-  #     EXE_EXT: ${{ contains(matrix.os, 'windows') && '.exe' || '' }}
+    env:
+      EXE_EXT: ${{ contains(matrix.os, 'windows') && '.exe' || '' }}
 
-  #   services:
-  #     # Label used to access the service container
-  #     postgres:
-  #       # Docker Hub image
-  #       image: postgres
-  #       # Provide the password for postgres
-  #       env:
-  #         POSTGRES_PASSWORD: testing
-  #       # Set health checks to wait until postgres has started
-  #       options: >-
-  #         --health-cmd pg_isready
-  #         --health-interval 10s
-  #         --health-timeout 5s
-  #         --health-retries 5
+    services:
+      # Label used to access the service container
+      postgres:
+        # Docker Hub image
+        image: postgres
+        # Provide the password for postgres
+        env:
+          POSTGRES_PASSWORD: testing
+        # Set health checks to wait until postgres has started
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
-  #   steps:
-  #     - uses: actions/checkout@v3
-  #     - name: Install LLVM (windows only)
-  #       if: runner.os == 'Windows'
-  #       run: choco install llvm
+  steps:
+    - uses: actions/checkout@v2
 
-  #     - uses: hecrj/setup-rust-action@v1
-  #       with:
-  #         rust-version: "nightly"
-  #     # ref: https://github.com/actions/cache/blob/main/examples.md#rust---cargo
-  #     - uses: actions/cache@v2
-  #       with:
-  #         path: |
-  #           ~/.cargo/bin/
-  #           ~/.cargo/registry/index/
-  #           ~/.cargo/registry/cache/
-  #           ~/.cargo/git/db/
-  #           target/
-  #         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+    # - uses: hecrj/setup-rust-action@v1
+    #   with:
+    #     rust-version: "nightly"
+    # ref: https://github.com/actions/cache/blob/main/examples.md#rust---cargo
 
-  #     - name: Check targets are installed correctly
-  #       run: rustup target list --installed
-  #     - name: Check fmt
-  #       run: rustup component add rustfmt; cargo fmt -- --check
+    # - uses: harmon758/postgresql-action@v1
+    #   with:
+    #     postgresql version: ${{ env.PSQL_VERSION }}
+    #     postgresql db: ${{ env.PSQL_TEST_DB }}
+    #     postgresql user: ${{ env.PSQL_TEST_USER }}
+    #     postgresql password: ${{ env.PSQL_TEST_PASSWORD }}
 
-  #     - name: Setup tmate session
-  #       # v1.0.2
-  #       uses: mxschmitt/action-tmate@b85ae7b45d889eec8b1772f81370970c15b78092
+    # - uses: actions/cache@v2
+    #   with:
+    #     path: |
+    #       ~/.cargo/bin/
+    #       ~/.cargo/registry/index/
+    #       ~/.cargo/registry/cache/
+    #       ~/.cargo/git/db/
+    #       target/
+    #     key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    # - name: Check targets are installed correctly
+    #   run: rustup target list --installed
+    # - name: Check fmt
+    #   run: rustup component add rustfmt; cargo fmt -- --check
+
+    - name: Setup tmate session
+      # v1.0.2
+      uses: mxschmitt/action-tmate@b85ae7b45d889eec8b1772f81370970c15b78092
